@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Server {
+    public static final int MESSAGE_ID_LENGTH = 16;             // set the length of the message ID
+    public static final int MESSAGE_INFO_START_INDEX = 20;      // set the length of the start index of the message information
+
     public static void main(String[] args) {
         System.out.println("Server started on port 6789");
         byte[] buffer = new byte[1000];
@@ -15,10 +18,12 @@ public class Server {
         byte[] data;
 
         while (true) {
-            DatagramPacket request = receiveRequest(buffer);                // listen for requests from clients
-            data = request.getData();                                       // get the data from the request DatagramPacket
-            int action = byteArrayToInt(Arrays.copyOfRange(data, 0, 4));    // get the action to be taken by the server
-            byte[] info = Arrays.copyOfRange(data, 4, data.length);         // get the information from the client
+            DatagramPacket request = receiveRequest(buffer);                                // listen for requests from clients
+            data = request.getData();                                                       // get the data from the request DatagramPacket
+            String messageID = new String(Arrays.copyOfRange(data, 0, MESSAGE_ID_LENGTH));
+            System.out.println(messageID);
+            int action = byteArrayToInt(Arrays.copyOfRange(data, MESSAGE_ID_LENGTH, MESSAGE_INFO_START_INDEX));    // get the action to be taken by the server
+            byte[] info = Arrays.copyOfRange(data, MESSAGE_INFO_START_INDEX, data.length);                         // get the information from the client
 
             /* switch statement to select the action to be taken by the server */
             switch (action) {
@@ -87,7 +92,9 @@ public class Server {
         return choiceBuffer.getInt();
     }
 
-    //
+    /**
+     * Pointer class to store a value that will be updated subsequently
+     */
     static class Pointer {
         int val;
 
@@ -111,6 +118,8 @@ public class Server {
             the byte array will be:
 
             00 00 00 01 00 00 00 0A 4A 6F 68 6E 20 53 6D 69 74 68 5F 5F 00 00 00 03 4E 5A 44 5F 00 00 00 08 50 40 73 73 77 6F 72 64 00 00 00 07 31 30 30 30 2E 30 30 5F
+
+            However, take note that the first 16 bytes will be the messageID which is randomly generated on the client side
 
             00 00 00 01 = 1 (4 bytes to decide what action server will take in the switch statement shown above)
 

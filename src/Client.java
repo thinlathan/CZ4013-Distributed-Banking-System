@@ -1,3 +1,5 @@
+import utils.MessageIDGenerator;
+
 import java.lang.reflect.Array;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -5,6 +7,9 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
 public class Client {
+    public static final int MESSAGE_ID_LENGTH = 16;     // set the length of the message ID
+    public static MessageIDGenerator gen = new MessageIDGenerator(MESSAGE_ID_LENGTH);   // create a new MessageIDGenerator
+
     public static void main(String[] args) {
 
         int bankAcc = createAccount("John Smith", Currency.NZD, "P@ssword", "1000.00");
@@ -42,10 +47,13 @@ public class Client {
         byte[] accBalanceLengthByteArray = ByteBuffer.allocate(4).putInt(accBalanceLength).array();
         byte[] accBalanceArray = convertStringToByteArray(initialAccBalance);
 
+        String messageID = gen.nextString();
+        System.out.println(messageID);
+        byte[] messageIDArray = convertStringToByteArray(messageID);
 
-        byte[] marshall = concatWithCopy(accCreationByteArray, nameLengthByteArray, nameByteArray, currencyLengthByteArray, currencyByteArray, passwordLengthByteArray, passwordByteArray, accBalanceLengthByteArray, accBalanceArray);
+        byte[] marshall = concatWithCopy(messageIDArray, accCreationByteArray, nameLengthByteArray, nameByteArray, currencyLengthByteArray, currencyByteArray, passwordLengthByteArray, passwordByteArray, accBalanceLengthByteArray, accBalanceArray);
         for (byte c : marshall) {
-            System.out.printf("%02X ", c);      // printing to show the marshalled data on console:w
+            System.out.printf("%02X ", c);      // printing to show the marshalled data on console
         }
         System.out.println();
         byte[] reply = sendRequest(marshall);

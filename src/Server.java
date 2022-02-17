@@ -16,6 +16,7 @@ public class Server {
         byte[] buffer = new byte[1000];
         byte[] reply = new byte[1000];
         byte[] data;
+        double balance;
 
         while (true) {
             DatagramPacket request = receiveRequest(buffer);                                // listen for requests from clients
@@ -30,12 +31,25 @@ public class Server {
                 case 1:
                     int accNumber = processAccCreation(info);                   // call the function to process the account creation
                     reply = ByteBuffer.allocate(4).putInt(accNumber).array();   // convert the account number into a byte[] array to be sent to client
-            }
+                    break;
+                case 2:
+                    balance = depositMoney(info);
+                    reply = ByteBuffer.allocate(8).putDouble(balance).array();
+                    break;
+                case 3:
+                    balance=withdrawMoney(info);
+                    reply = ByteBuffer.allocate(8).putDouble(balance).array();
+                }
 
             sendReply(request, reply);      // send to client the reply message
             reply = new byte[1000];         // reset buffers
             buffer = new byte[1000];
         }
+    }
+    public static byte[] toByteArray(double value) {
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putDouble(value);
+        return bytes;
     }
 
     /**
@@ -102,6 +116,52 @@ public class Server {
             this.val = val;
         }
     }
+    public static double depositMoney(byte[] request) {
+        Pointer val = new Pointer(0);
+
+        String name = unmarshall(val, request);
+        System.out.printf("name: %s\n", name);
+
+        String accNumber = unmarshall(val, request);
+        System.out.printf("account number: %s\n", accNumber);
+
+        String password = unmarshall(val, request);
+        System.out.printf("password: %s\n", password);
+
+        String currency = unmarshall(val, request);
+        System.out.printf("currency: %s\n", currency);
+
+        String depositString = unmarshall(val, request);
+        Double deposit = round(Double.parseDouble(depositString), 2);
+        System.out.printf("deposit: $%.2f\n", deposit);
+
+        double balance=123.45;
+        return balance;
+    }
+
+    public static double withdrawMoney(byte[] request) {
+        Pointer val = new Pointer(0);
+
+        String name = unmarshall(val, request);
+        System.out.printf("name: %s\n", name);
+
+        String accNumber = unmarshall(val, request);
+        System.out.printf("account number: %s\n", accNumber);
+
+        String password = unmarshall(val, request);
+        System.out.printf("password: %s\n", password);
+
+        String currency = unmarshall(val, request);
+        System.out.printf("currency: %s\n", currency);
+
+        String withdrawString = unmarshall(val, request);
+        Double withdraw = round(Double.parseDouble(withdrawString), 2);
+        System.out.printf("withdraw: $%.2f\n", withdraw);
+
+        double balance=234.56;
+        return balance;
+    }
+
 
     /**
      * Function to process the account creation, which will unmarshall the data from the client
@@ -109,6 +169,7 @@ public class Server {
      * @param request byte array containing data from the client
      * @return the account number of the newly opened bank account
      */
+
     public static int processAccCreation(byte[] request) {
         /*
             I'm basing my design off CORBA's Common Data Representation where it is assumed that sender and recipient have
@@ -118,7 +179,7 @@ public class Server {
             the byte array will be:
 
             00 00 00 01 00 00 00 0A 4A 6F 68 6E 20 53 6D 69 74 68 5F 5F 00 00 00 03 4E 5A 44 5F 00 00 00 08 50 40 73 73 77 6F 72 64 00 00 00 07 31 30 30 30 2E 30 30 5F
-
+            
             However, take note that the first 16 bytes will be the messageID which is randomly generated on the client side
 
             00 00 00 01 = 1 (4 bytes to decide what action server will take in the switch statement shown above)
